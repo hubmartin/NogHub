@@ -1,6 +1,6 @@
 ﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">  
 <html>
-<head><title>Chart</title>
+<head><title>NogHub</title>
 
 <link href="favicon.png" rel="icon" type="image/png" />
 
@@ -368,7 +368,7 @@ autoApp.controller('eventController',  function($scope, $http) {
 	
 	<div id="tabs">
 <ul>
-<li><a href="#tabs-1">Grafy</a></li>
+<li><a href="#tabs-1">Graphs</a></li>
 </ul>
 <div id="tabs-1">
 	<table>
@@ -381,23 +381,23 @@ autoApp.controller('eventController',  function($scope, $http) {
 	<td style="padding:20px">
 	
 		<div>
-	 		Od <input type="text" id="dateTimeFrom" value="18.08.2010 10:50" /><br/>
-			Do <input type="text" id="dateTimeTo" value="18.08.2024 10:50" /><br />
-			<input type="button" id="dateReload" value="Načíst" />
+	 		From <input type="text" id="dateTimeFrom" value="18.08.2010 10:50" /><br/>
+			To <input type="text" id="dateTimeTo" value="18.08.2024 10:50" /><br />
+			<input type="button" id="dateReload" value="Reload" />
 		</div>	
 		
 		<div>
 		<select onchange="timeSetLastDays(this.value)">
-			<option value="0">Poslední...</option>
-			<option value="-2">2 hodiny</option>
-			<option value="-8">8 hodin</option>
-			<option value="-12">12 hodin</option>
-			<option value="1">den</option>
-			<option value="7">týden</option>
-			<option value="31">měsíc</option>
-			<option value="90">čtvrtletí</option>
-			<option value="180">pololetí</option>
-			<option value="365">rok</option>
+			<option value="0">Last...</option>
+			<option value="-2">2 hours</option>
+			<option value="-8">8 hours</option>
+			<option value="-12">12 hours</option>
+			<option value="1">day</option>
+			<option value="7">week</option>
+			<option value="31">month</option>
+			<option value="90">quarter</option>
+			<option value="180">half year</option>
+			<option value="365">year</option>
 		</select>
 		</div>
 		
@@ -418,7 +418,7 @@ autoApp.controller('eventController',  function($scope, $http) {
 		
 		<div>
 		<br/><br/>
-		Zařízení:<br/>
+		Devices:<br/>
 	<div id="devices"></div>
 	</div>
 	</td>
