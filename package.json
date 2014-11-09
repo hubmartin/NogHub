@@ -1,0 +1,32 @@
+{
+  "name": "NogHub",
+  "version": "0.0.0",
+  "description": "<h1>Hello</h1>",
+  "main": "main.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "dependencies": {
+    "express": "~4.8.4",
+    "eyes": "~0.1.8",
+    "mqtt": "~0.3.12",
+    "xml2js": "~0.4.4",
+    "swig": "~1.4.2",
+    "mysql": "~2.4.2",
+    "xpath": "~0.0.7",
+    "xmldom": "~0.1.19"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hubmartin/NogHub.git"
+  },
+  "author": "",
+  "license": "BSD",
+  "bugs": {
+    "url": "https://github.com/hubmartin/NogHub/issues"
+  }
+}
