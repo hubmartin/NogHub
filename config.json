@@ -1,0 +1,24 @@
+{
+
+	"web":
+	{
+		"port":7980
+	},
+	
+	"mqtt":
+	{
+		"enable":1,
+		"host": "iot.eclipse.org",
+		"port":1883,
+		"writeCounter":1,
+		"index":7 
+	},
+	
+	"db": 
+	{
+		"host":"localhost",
+		"user" : "root",
+		"password" : "",
+		"database":"auto"
+	}
+}
