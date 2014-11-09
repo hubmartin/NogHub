@@ -1,0 +1,432 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">  
+<html>
+<head><title>Chart</title>
+
+<link href="favicon.png" rel="icon" type="image/png" />
+
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<script language="javascript" type="text/javascript" src="flot/jquery.js"></script>
+
+<script language="javascript" type="text/javascript" src="angular.min.js"></script>
+
+<script language="javascript" type="text/javascript" src="flot/jquery.flot.js"></script>
+<script language="javascript" type="text/javascript" src="flot/jquery.flot.time.js"></script>
+<script language="javascript" type="text/javascript" src="flot/jquery.flot.selection.js"></script>
+<link href="flot/examples/examples.css" rel="stylesheet" type="text/css">
+
+<script language="javascript" type="text/javascript" src="jquery-ui/jquery-ui.min.js"></script>
+<link href="jquery-ui/jquery-ui.css" rel="stylesheet">
+
+<script language="javascript" type="text/javascript" src="timepicker/jquery-ui-timepicker-addon.min.js"></script>
+<link href="timepicker/jquery-ui-timepicker-addon.css" rel="stylesheet">
+</head>
+<body ng-app = "autoApp">
+
+	<script type="text/javascript">
+	var options = {
+			lines: {
+				show: true
+			},
+			points: {
+				show: true
+			},
+			xaxis: {
+				mode: "time",
+				timeformat: "%d.%m %y %H:%M:%S",
+				timezone: "browser"
+			},
+			legend: {
+				show: false
+			},
+			grid: 
+			{
+				hoverable: true
+			},
+			selection: {
+				mode: "x"
+			}
+		};
+		
+		
+		var optionsDatepicker = 
+		{
+			timeFormat: "HH:mm",
+			dateFormat: "dd.mm.yy"
+		}
+		
+		$.datepicker.regional['cs'] = {
+	closeText: 'Zavřít',
+	prevText: '< Předchozí',
+	nextText: 'Následující >',
+	currentText: 'Nyní',
+	monthNames: ['Leden','Únor','Březen','Duben','Květen','Červen',
+	'Červenec','Srpen','Září','Říjen','Listopad','Prosinec'],
+	monthNamesShort: ['Led','Úno','Bře','Dub','Kvě','Čer',
+	'Čvc','Srp','Zář','Říj','Lis','Pro'],
+	dayNames: ['neděle','pondělí','úterý','středa','čtvrtek','pátek','sobota'],
+	dayNamesShort: ['ne', 'pon','úte','stř','čtv','pát','so'],
+	dayNamesMin: ['Ne','Po','Út','St','Čt','Pá','So'],
+	weekHeader: 'Не',
+	dateFormat: 'dd.mm.yy',
+	firstDay: 1,
+	isRTL: false,
+	showMonthAfterYear: false,
+	yearSuffix: ''
+};
+$.datepicker.setDefaults($.datepicker.regional['cs']);
+
+
+$.timepicker.regional['cs'] = {
+	timeOnlyTitle: 'Выберите время',
+	timeText: 'Čas',
+	hourText: 'Hodiny',
+	minuteText: 'Мinuty',
+	secondText: 'Sekundy',
+	millisecText: 'Milisekundy',
+	timezoneText: 'Časová zóna',
+	currentText: 'Nyní',
+	closeText: 'Zavřít',
+	timeFormat: 'HH:mm',
+	amNames: ['AM', 'A'],
+	pmNames: ['PM', 'P'],
+	isRTL: false
+};
+$.timepicker.setDefaults($.timepicker.regional['cs']);
+		
+		var chartData = [];
+		
+		var selectedSeries = []; //[5,6];
+		var devices = [];
+		
+		var aggregateValue = "none";
+		    
+			var previousPoint = null;
+ 
+			$.fn.UseTooltip = function () {
+				$(this).bind("plothover", function (event, pos, item) {                        
+					if (item) {
+						if (previousPoint != item.dataIndex) {
+							previousPoint = item.dataIndex;
+			 
+							$("#tooltip").remove();
+							 
+							var x = item.datapoint[0];
+							var y = item.datapoint[1]; 
+
+//console.log(item.series.color);							
+			  
+							showTooltip(item.pageX, item.pageY,item.series.color,"<strong>" + y.toFixed(1) + "</strong> ");
+						}
+					}
+					else {
+						$("#tooltip").remove();
+						previousPoint = null;
+					}
+				});
+			};
+						
+			function showTooltip(x, y, color, contents) {
+				$('<div id="tooltip">' + contents + '</div>').css({
+					position: 'absolute',
+					display: 'none',
+					top: y + 5,
+					left: x + 20,
+					border: '2px solid ' + color,
+					padding: '2px',    
+					size: '10',  
+					'border-radius': '6px 6px 6px 6px',
+					'background-color': '#fff',
+					opacity: 0.80
+				}).appendTo("body").fadeIn(200);
+			}
+			
+			
+			function dummy(){loadSeries(selectedSeries);}
+			
+	function graphUpdateData()
+	{
+		loadSeries(selectedSeries);
+	}
+			
+	$(function() {
+
+	$( "#tabs" ).tabs({
+		activate: function( event, ui ) { console.log(event); console.log(ui);}
+	});
+	$( "#tabs" ).on( "tabsbeforeload", function( event, ui ) { console.log(event); console.log(ui);} );
+	
+	$('#dateTimeFrom').datetimepicker(optionsDatepicker);
+	$('#dateTimeTo').datetimepicker(optionsDatepicker);
+
+	$("#dateReload").click(function() 
+	{
+		graphUpdateData();
+		
+		var time = $('#dateTimeFrom').datetimepicker('getDate')
+		console.log(time + "\n" + time.getTime()/1000);
+	});
+	
+	
+
+	
+			initDevices(dummy);
+			
+			$("#placeholder").UseTooltip();
+			
+			
+		var placeholder = $("#placeholder");
+
+		placeholder.bind("plotselected", function (event, ranges) {
+
+			//$("#selection").text(ranges.xaxis.from.toFixed(1) + " to " + ranges.xaxis.to.toFixed(1));
+
+			//var zoom = $("#zoom").prop("checked");
+
+			/*
+				$.each(plot.getXAxes(), function(_, axis) {
+					var opts = axis.options;
+					opts.min = ranges.xaxis.from;
+					opts.max = ranges.xaxis.to;
+					console.log(axis);
+				});*/
+				//plot.setupGrid();
+				//plot.draw();
+				//plot.clearSelection();
+				
+				var dateFrom = parseInt(ranges.xaxis.from / 1);
+				var dateTo = parseInt(ranges.xaxis.to / 1);
+
+				$('#dateTimeFrom').datetimepicker('setDate', (new Date(dateFrom)) );
+				$('#dateTimeTo').datetimepicker('setDate', (new Date(dateTo)) );
+			
+		});
+	});
+	
+	function chartRedraw()
+	{
+		var plot = $.plot("#placeholder", chartData, options);
+		//plot.draw();
+		
+	}
+	
+	
+	
+	
+	function initDevices(initDone)
+	{
+			$.ajax(
+			{
+					url: "/device",
+					type: "GET",
+					dataType: "json",
+					success: function(data)
+					{
+						console.log(data.length);	
+						for(i in data)
+						{
+							devices[i] = data[i];
+							console.log(data[i].name);
+							var div = $("<div>");
+							
+							var color = $("<span>").html("__").css("background-color", data[i].color).css("color", data[i].color);
+							div.append(color);
+							
+							var check = $("<input type='checkbox'/>").val(data[i].id).attr("id", "legend"+data[i].id);
+							div.append(check);
+							
+							var label = $("<label>").attr("for","legend"+data[i].id).html(data[i].name);
+							div.append(label);
+							
+							var name = data[i].name;
+							
+							var checked = false;
+							if(data[i].selected)
+							{	
+								check.attr("checked", "checked");
+								selectedSeries.push(data[i].id);
+							}
+							
+							check.click( function()
+							{
+								var id = parseInt($(this).val());
+								if($(this).prop( "checked" ))
+								{
+									remove(selectedSeries, id);
+									selectedSeries.push(id);
+									console.log("check" + id);
+
+									loadSerie(id);
+									
+								} else {
+									// uncheck
+									remove(selectedSeries, id);
+									console.log("uncheck" + id);
+									for(i = 0; i < chartData.length; i++)
+									{
+										if(chartData[i].id == id)
+										{
+											console.log("found " + i);
+											removeIndex(chartData, i);
+										}
+									}
+									chartRedraw();
+								}
+							})
+							
+							
+							$("#devices").append(div);
+						}
+						
+						initDone();
+					}
+			});
+			
+			
+	}
+	
+	function loadSeries(series)
+	{
+		chartData = [];
+		
+		for(i in series)
+		{
+			loadSerie(series[i]);
+		}
+	}
+	
+	function loadSerie(serie)
+	{
+			$.ajax(
+			{
+					url: "/device/" + serie,
+					type: "GET",
+					data: { dateTimeFrom: $('#dateTimeFrom').datetimepicker('getDate').getTime()/1000, dateTimeTo: $('#dateTimeTo').datetimepicker('getDate').getTime()/1000, aggregate: aggregateValue},
+					dataType: "json",
+					success: onDataReceived
+			});
+	}
+
+	
+	function onDataReceived(series)
+	{
+			chartData.push(series);
+			chartRedraw();
+	}
+
+	function remove(arr, item)
+	{
+	   var i;
+	   while((i = arr.indexOf(item)) !== -1) {
+		 arr.splice(i, 1);
+	   }
+	}
+
+	function removeIndex(arr, index)
+	{
+		arr.splice(index, 1);
+	}
+	
+	function timeSetLastDays(numberOfDays)
+	{
+	// if value is negative, it means hours instead of days
+		var now = new Date();
+		var from;
+		if(numberOfDays >= 0)
+			from = new Date( new Date(now - numberOfDays * 24 * 3600 * 1000) );
+		else
+			from = new Date( new Date(now - Math.abs(numberOfDays) * 3600 * 1000) );
+		$('#dateTimeFrom').datetimepicker('setDate', from );
+		$('#dateTimeTo').datetimepicker('setDate', now );
+		
+		graphUpdateData();
+	}
+	
+	function aggregateData(value)
+	{
+		aggregateValue = value;
+	}	
+	
+
+var autoApp = angular.module('autoApp', []);
+
+autoApp.controller('eventController',  function($scope, $http) {
+	
+	$scope.loadEvents = function()
+	{
+		$http.get('event').success(function(events) {
+			$scope.events = events;
+		});
+	}
+});
+
+
+
+			
+	</script>
+	
+
+	
+	<div id="tabs">
+<ul>
+<li><a href="#tabs-1">Grafy</a></li>
+</ul>
+<div id="tabs-1">
+	<table>
+	<tr>
+	<td>
+	<div class="demo-container">
+			<div id="placeholder" class="demo-placeholder"></div>
+	</div>
+	</td>
+	<td style="padding:20px">
+	
+		<div>
+	 		Od <input type="text" id="dateTimeFrom" value="18.08.2010 10:50" /><br/>
+			Do <input type="text" id="dateTimeTo" value="18.08.2024 10:50" /><br />
+			<input type="button" id="dateReload" value="Načíst" />
+		</div>	
+		
+		<div>
+		<select onchange="timeSetLastDays(this.value)">
+			<option value="0">Poslední...</option>
+			<option value="-2">2 hodiny</option>
+			<option value="-8">8 hodin</option>
+			<option value="-12">12 hodin</option>
+			<option value="1">den</option>
+			<option value="7">týden</option>
+			<option value="31">měsíc</option>
+			<option value="90">čtvrtletí</option>
+			<option value="180">pololetí</option>
+			<option value="365">rok</option>
+		</select>
+		</div>
+		
+		<div style="display:none">
+		Aggregate:
+		<select onchange="aggregateData(this.value)">
+			<option value="none">žádná</option>
+			<option value="minute">minuta</option>
+			<option value="hour">hodina</option>
+			<option value="day">den</option>
+			<option value="week">týden</option>
+			<option value="month">měsíc</option>
+			<option value="quarter">čtvrtletí</option>
+			<option value="half">pololetí</option>
+			<option value="year">rok</option>
+		</select>
+		</div>		
+		
+		<div>
+		<br/><br/>
+		Zařízení:<br/>
+	<div id="devices"></div>
+	</div>
+	</td>
+	</tr>
+	</table>
+</div>
+
+</div>
+
+</body>
+</html
