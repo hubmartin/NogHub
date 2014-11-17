@@ -10,38 +10,24 @@ var client;
 var reconnectTimer = null;
 var mqttCache;
 
-var connection;
-var db;
-
-/*
-function mqttPlanReconnect()
-{
-	if(reconnectTimer)
-		clearTimeout(reconnectTimer);
-		
-	reconnectTimer = null;
-	
-	if(!reconnectTimer)
-	{
-		reconnectTimer = setTimeout(function() { mqttConnect() }, 2000);
-		console.log("mqttPlanReconnect");
-	}
-}*/
-
 function mqttConnect()
 {
-	client =  mqtt.createClient(config.mqtt.port, config.mqtt.host);
-	
-	//console.log(client);
-	/*
-	if(!client.connected)
+	return mqtt.createClient(config.mqtt.port, config.mqtt.host2);
+}
+
+module.exports = function(obj)
+{
+	var connection = obj.connection;
+	var db = obj.db;
+
+	if(!config.mqtt.enable)
 	{
-		client.end();
-		client = null;
-		console.log("MQTT failed to connect");
-		mqttPlanReconnect();
+		console.log("mqtt disabled, exiting now");
 		return;
-	}*/
+	}	
+
+	// For now we allow only connection to one server
+	client = mqttConnect();
 	
 	// Cache from DB
 	mqttCache = new Array();
@@ -63,13 +49,15 @@ function mqttConnect()
 			var value =  parseFloat(message);
 			console.log("Mqtt topic: " + topic + " val: " + value);
 			
+			var deviceId = config.mqtt.index;
+			
 			// Search for deviceId from DB cache
 			for(var i in mqttCache)
 			{
 				// Found exact expression
 				if(topic == mqttCache[i].expression)
 				{
-					var deviceId = mqttCache[i].id;
+					deviceId = mqttCache[i].id;
 					
 					if(mqttMessageCount == config.mqtt.writeCounter) // 12*2)
 					{
@@ -95,7 +83,11 @@ function mqttConnect()
 			console.log("mqtt close");
 			client.end();
 			
-			
+			if(!reconnectTimer)
+			{
+				reconnectTimer = setTimeout(function() {}, 2000);
+				console.log("MQTT RECON TIMER");
+			}
 		});
 
 		// Error
@@ -122,21 +114,5 @@ function mqttConnect()
 		}
 
 	});	
-}
-
-module.exports = function(obj)
-{
-	connection = obj.connection;
-	db = obj.db;
-
-	if(!config.mqtt.enable)
-	{
-		console.log("mqtt disabled, exiting now");
-		return;
-	}	
-
-	// For now we allow only connection to one server
-	mqttConnect();
-	
 
 }

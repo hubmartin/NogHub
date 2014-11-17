@@ -12,14 +12,16 @@ var deviceXmlParse = function(device, data)
 		try {
 			var doc = new dom().parseFromString(data,"text/xml");
 			var nodes = xpath.select(device.expression, doc);
+			
+			if(nodes)	
+				db.addValue(device.id, nodes[0].data | nodes[0].value);
 		 }
 		catch(ex)
 		{
 			console.log(ex);
 			return;
 		}
-	if(nodes)	
-		db.addValue(device.id, nodes[0].data | nodes[0].value);
+	
 }
 
 

@@ -9,9 +9,9 @@
 	{
 		"enable":1,
 		"host": "iot.eclipse.org",
+		"host2": "localhost",
 		"port":1883,
-		"writeCounter":1,
-		"index":7 
+		"writeCounter":1
 	},
 	
 	"db": 

@@ -37,7 +37,7 @@ var main = function()
 	require("./web")({ device: device, connection: connection});
 	require("./mqtt")({ connection: connection, db: db});
 	require("./xml")({ connection: connection, db:db});
-		
+	
 }
 
 
