@@ -148,6 +148,10 @@ $.timepicker.setDefaults($.timepicker.regional['cs']);
 		loadSeries(selectedSeries);
 	}
 			
+			
+	//
+	// Startup
+	//
 	$(function() {
 
 	$( "#tabs" ).tabs({
@@ -157,6 +161,8 @@ $.timepicker.setDefaults($.timepicker.regional['cs']);
 	
 	$('#dateTimeFrom').datetimepicker(optionsDatepicker);
 	$('#dateTimeTo').datetimepicker(optionsDatepicker);
+	
+	timeSetLastDays(2, false);
 
 	$("#dateReload").click(function() 
 	{
@@ -210,7 +216,15 @@ $.timepicker.setDefaults($.timepicker.regional['cs']);
 	}
 	
 	
+	function loadingAppend(id)
+	{
+		$("#device" + id).append($("<img>").attr("src","loading.gif").attr("id", "loading" + id).css("height","20px").css("margin-left", "5px"));
+	}
 	
+	function loadingRemove(id)
+	{
+		$("#loading" + id).remove();
+	}
 	
 	function initDevices(initDone)
 	{
@@ -226,7 +240,7 @@ $.timepicker.setDefaults($.timepicker.regional['cs']);
 						{
 							devices[i] = data[i];
 							console.log(data[i].name);
-							var div = $("<div>");
+							var div = $("<div>").attr("id","device" + data[i].id);
 							
 							var color = $("<span>").html("__").css("background-color", data[i].color).css("color", data[i].color);
 							div.append(color);
@@ -244,6 +258,8 @@ $.timepicker.setDefaults($.timepicker.regional['cs']);
 							{	
 								check.attr("checked", "checked");
 								selectedSeries.push(data[i].id);
+								
+								loadingAppend(data[i].id);
 							}
 							
 							check.click( function()
@@ -254,6 +270,8 @@ $.timepicker.setDefaults($.timepicker.regional['cs']);
 									remove(selectedSeries, id);
 									selectedSeries.push(id);
 									console.log("check" + id);
+									
+									//loadingAppend(id);
 
 									loadSerie(id);
 									
@@ -296,6 +314,8 @@ $.timepicker.setDefaults($.timepicker.regional['cs']);
 	
 	function loadSerie(serie)
 	{
+		    loadingAppend(serie);
+			
 			$.ajax(
 			{
 					url: "/device/" + serie,
@@ -309,6 +329,7 @@ $.timepicker.setDefaults($.timepicker.regional['cs']);
 	
 	function onDataReceived(series)
 	{
+			loadingRemove(series.id)
 			chartData.push(series);
 			chartRedraw();
 	}
@@ -326,7 +347,7 @@ $.timepicker.setDefaults($.timepicker.regional['cs']);
 		arr.splice(index, 1);
 	}
 	
-	function timeSetLastDays(numberOfDays)
+	function timeSetLastDays(numberOfDays, doUpdate)
 	{
 	// if value is negative, it means hours instead of days
 		var now = new Date();
@@ -338,7 +359,8 @@ $.timepicker.setDefaults($.timepicker.regional['cs']);
 		$('#dateTimeFrom').datetimepicker('setDate', from );
 		$('#dateTimeTo').datetimepicker('setDate', now );
 		
-		graphUpdateData();
+		if(doUpdate)
+			graphUpdateData();
 	}
 	
 	function aggregateData(value)
@@ -387,7 +409,7 @@ autoApp.controller('eventController',  function($scope, $http) {
 		</div>	
 		
 		<div>
-		<select onchange="timeSetLastDays(this.value)">
+		<select onchange="timeSetLastDays(this.value, true)">
 			<option value="0">Last...</option>
 			<option value="-2">2 hours</option>
 			<option value="-8">8 hours</option>
