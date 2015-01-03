@@ -112,10 +112,11 @@ $.timepicker.setDefaults($.timepicker.regional['cs']);
 							 
 							var x = item.datapoint[0];
 							var y = item.datapoint[1]; 
-
-//console.log(item.series.color);							
+							
+							date = new Date(x)
+							time = date.getHours() + ":" + (date.getMinutes() < 10 ? "0" : "") + date.getMinutes();			
 			  
-							showTooltip(item.pageX, item.pageY,item.series.color,"<strong>" + y.toFixed(1) + "</strong> ");
+							showTooltip(item.pageX, item.pageY,item.series.color,"<strong>" + y.toFixed(1) + "</strong><br/><small>" +item.series.label+ "<br/>" + time + "</small>");
 						}
 					}
 					else {
@@ -147,7 +148,170 @@ $.timepicker.setDefaults($.timepicker.regional['cs']);
 	{
 		loadSeries(selectedSeries);
 	}
+	
+	
+	var ItemDetail = function(_super, item)
+	{
+		this.item = item;
+		this.show = false;
+		
+		this._super = _super;
+		
+		// Display item in list
+		var div = $("<div>").attr("id","device" + this.item.id);
+		
+		var color = $("<span>").html("__").css("background-color", this.item.color).css("color", this.item.color);
+		div.append(color);
+		
+		var check = $("<input type='checkbox'/>").val(this.item.id).attr("id", "legend"+this.item.id);
+		div.append(check);
+		
+		var label = $("<label>").attr("for","legend"+this.item.id).html(""+this.item.name);
+		div.append(label);
+		
+		if(this.item.selected)
+		{	
+			check.attr("checked", "checked");
+			this.show = true;
+		}
+		
+		var _this = this;
+		
+		check.click( function()
+		{
+			// Check
+			var id = parseInt($(this).val());
+			if($(this).prop( "checked" ))
+			{
+				console.log("check" + id);
+				_this.loadData();
+				_this.show = true;
+			} else {
+				// uncheck
+				_this.show = false;
+				console.log("uncheck" + id);
+				for(i = 0; i < _this._super.itemsData.length; i++)
+				{
+					if(_this._super.itemsData[i].id == id)
+					{
+						console.log("found " + i);
+						removeIndex(_this._super.itemsData, i);
+					}
+				}
+				_this._super.graphRedraw();
+			}
+		})
+		
+		
+		$("#devices").append(div);
+		
+		this.showLoadingAnimation = function(show)
+		{
+			if(show)
+				$("#device" + this.item.id).append($("<img>").attr("src","loading.gif").attr("id", "loading" + this.item.id).css("height","20px").css("margin-left", "5px"));
+			else
+				$("#loading" + this.item.id).remove();
+		}
+		
+		this.onDataReceived = function(data)
+		{
+				this.showLoadingAnimation(false);
+				this._super.itemDataPush(data);
+		}
+		
+		
+		this.loadData = function()
+		{
+			this.showLoadingAnimation(true);
+			_this = this;
 			
+			$.ajax(
+			{
+					url: "/device/" + item.id,
+					type: "GET",
+					data: { dateTimeFrom: $('#dateTimeFrom').datetimepicker('getDate').getTime()/1000, dateTimeTo: $('#dateTimeTo').datetimepicker('getDate').getTime()/1000, aggregate: aggregateValue},
+					dataType: "json",
+					success: function(data) {_this.onDataReceived(data)}
+			});
+		}
+		
+	}
+			
+	var PageGraph = function()
+	{
+		// Items and details
+		this.items = [];
+		// Data to plot/Flot
+		this.itemsData = [];
+		
+		
+		this.itemsDataClear = function() 
+		{
+			this.itemsData = [];
+		}
+		
+		this.graphRedraw = function()
+		{
+			var plot = $.plot("#placeholder", this.itemsData, options);
+		}
+		
+		this.itemDataPush = function(data)
+		{
+			this.itemsData.push(data);
+			this.graphRedraw();
+		}
+		
+		this.graphReloadData = function()
+		{
+			this.itemsDataClear();
+			this.graphDrawData();
+		}
+
+		this.graphDrawData = function()
+		{
+			for(i in this.items)
+			{
+				if(this.items[i].show)
+					this.items[i].loadData();
+			}
+		}
+		
+		this.loadItems = function()
+		{
+			this.loadItemsCallback(this.graphDrawData);
+		}
+		
+		this.loadItemsCallback = function(loadedCallback) {
+		
+			_this = this;
+			
+			// Load items
+			$.ajax(
+			{
+					url: "/device",
+					type: "GET",
+					dataType: "json",
+					success: function(data)
+					{
+						console.log(data.length);	
+						for(i in data)
+						{
+							console.log(data[i].name);
+							_this.items.push( new ItemDetail( _this, data[i]) );
+						}
+						
+						loadedCallback.apply(_this);
+					}
+			});
+		
+		}
+	
+	}
+	
+	var pg = new PageGraph();
+	
+
+	
 			
 	//
 	// Startup
@@ -166,16 +330,16 @@ $.timepicker.setDefaults($.timepicker.regional['cs']);
 
 	$("#dateReload").click(function() 
 	{
-		graphUpdateData();
-		
+		//graphUpdateData();
+		pg.graphReloadData();
 		var time = $('#dateTimeFrom').datetimepicker('getDate')
 		console.log(time + "\n" + time.getTime()/1000);
 	});
 	
 	
-
+	pg.loadItems();
 	
-			initDevices(dummy);
+			//initDevices(dummy);
 			
 			$("#placeholder").UseTooltip();
 			
@@ -184,20 +348,6 @@ $.timepicker.setDefaults($.timepicker.regional['cs']);
 
 		placeholder.bind("plotselected", function (event, ranges) {
 
-			//$("#selection").text(ranges.xaxis.from.toFixed(1) + " to " + ranges.xaxis.to.toFixed(1));
-
-			//var zoom = $("#zoom").prop("checked");
-
-			/*
-				$.each(plot.getXAxes(), function(_, axis) {
-					var opts = axis.options;
-					opts.min = ranges.xaxis.from;
-					opts.max = ranges.xaxis.to;
-					console.log(axis);
-				});*/
-				//plot.setupGrid();
-				//plot.draw();
-				//plot.clearSelection();
 				
 				var dateFrom = parseInt(ranges.xaxis.from / 1);
 				var dateTo = parseInt(ranges.xaxis.to / 1);
@@ -235,11 +385,11 @@ $.timepicker.setDefaults($.timepicker.regional['cs']);
 					dataType: "json",
 					success: function(data)
 					{
-						console.log(data.length);	
+						//console.log(data.length);	
 						for(i in data)
 						{
 							devices[i] = data[i];
-							console.log(data[i].name);
+							//console.log(data[i].name);
 							var div = $("<div>").attr("id","device" + data[i].id);
 							
 							var color = $("<span>").html("__").css("background-color", data[i].color).css("color", data[i].color);
@@ -360,7 +510,7 @@ $.timepicker.setDefaults($.timepicker.regional['cs']);
 		$('#dateTimeTo').datetimepicker('setDate', now );
 		
 		if(doUpdate)
-			graphUpdateData();
+			pg.graphReloadData();
 	}
 	
 	function aggregateData(value)
